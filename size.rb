@@ -17,12 +17,21 @@ end
 group = GroupMessage.new(people: people)
 
 protobuf = GroupMessage.encode(group)
-puts protobuf.bytesize
+puts "protobuf: #{protobuf.bytesize}"
 
 json = GroupMessage.encode_json(group)
-puts json.bytesize
+puts "json: #{json.bytesize}"
 
 data = JSON.parse(json)
 
 msgpack = MessagePack.dump(data)
-puts msgpack.bytesize
+puts "msgpack: #{msgpack.bytesize}"
+
+cols = people.first.to_hash.keys
+slim_people = [cols.size] + cols
+people.each do |person|
+  slim_people += person.to_hash.values
+end
+slim_data = { group: slim_people }
+slim_msgpack = MessagePack.dump(slim_data)
+puts "slim msgpack: #{slim_msgpack.bytesize}"
