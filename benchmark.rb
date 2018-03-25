@@ -2,6 +2,9 @@
 
 $LOAD_PATH << File.join(__dir__, "ruby")
 
+require "json"
+require "msgpack"
+
 require_relative "ruby/person_message_pb"
 require_relative "ruby/group_message_pb"
 
@@ -18,3 +21,8 @@ puts protobuf.bytesize
 
 json = GroupMessage.encode_json(group)
 puts json.bytesize
+
+data = JSON.parse(json)
+
+msgpack = MessagePack.dump(data)
+puts msgpack.bytesize
