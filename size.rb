@@ -2,38 +2,41 @@
 
 $LOAD_PATH << File.join(__dir__, "ruby")
 
-count = (ARGV[0] || 100).to_i
-
+require "benchmark"
 require "json"
 require "msgpack"
 
 require_relative "ruby/person_message_pb"
 require_relative "ruby/group_message_pb"
 
-people = (1..count).map do |i|
-  PersonMessage.new(id: i,
-                    name: "##{i}",
-                    email: "foo.bar#{i}@example.com")
+def measure
+  yield.bytesize
 end
 
-group = GroupMessage.new(people: people)
+puts ["", "protobuf", "json", "msgpack", "slim msgpack"].join("\t")
 
-protobuf = GroupMessage.encode(group)
-puts "protobuf	#{protobuf.bytesize}"
+[100, 1000, 2000, 5000, 10000].each do |count|
+  people = (1..count).map do |i|
+    PersonMessage.new(id: i,
+                      name: "##{i}",
+                      email: "foo.bar#{i}@example.com")
+  end
 
-json = GroupMessage.encode_json(group)
-puts "json	#{json.bytesize}"
+  group = GroupMessage.new(people: people)
 
-data = JSON.parse(json)
+  data = JSON.parse(GroupMessage.encode_json(group))
 
-msgpack = MessagePack.dump(data)
-puts "msgpack	#{msgpack.bytesize}"
+  cols = people.first.to_hash.keys
+  slim_people = [cols.size] + cols
+  people.each do |person|
+    slim_people += person.to_hash.values
+  end
+  slim_data = { group: slim_people }
 
-cols = people.first.to_hash.keys
-slim_people = [cols.size] + cols
-people.each do |person|
-  slim_people += person.to_hash.values
+  protobuf = measure { GroupMessage.encode(group) }
+  json = measure { GroupMessage.encode_json(group) }
+  msgpack = measure { MessagePack.dump(data) }
+  slim_msgpack = measure { MessagePack.dump(slim_data) }
+
+  puts [count, protobuf, json, msgpack, slim_msgpack].join("\t")
 end
-slim_data = { group:	slim_people }
-slim_msgpack = MessagePack.dump(slim_data)
-puts "slim msgpack	#{slim_msgpack.bytesize}"
