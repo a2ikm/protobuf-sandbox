@@ -10,6 +10,6 @@ task :compile do
     protoc
     -I #{definitions}
     --ruby_out #{ruby_out}
-    #{File.join(definitions, "*.proto")}
+    $(find #{definitions} -name "*.proto")
   ).join(" ")
 end
